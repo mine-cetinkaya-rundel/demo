@@ -1,0 +1,105 @@
+---
+title: "Table 1 matches Figure 2"
+author: "Mine Çetinkaya-Rundel"
+date: "10/11/2020"
+output:
+  bookdown::html_document2:
+    fig_caption: yes
+bibliography: references.bib
+---
+
+```{r setup, message = FALSE, echo = FALSE}
+library(broom)           # for tidy model output
+library(here)            # for file paths
+library(glue)            # for gluing strings to data
+library(googlesheets4)   # for reading data from googlesheets
+library(knitr)           # for kable
+library(palmerpenguins)  # for data
+library(patchwork)       # for laying out multiple plots
+library(readxl)          # for reading in Excel data
+library(tidyverse)       # for data wrangling and visualisation
+```
+
+```{r chunk-options, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE,
+  out.width = "80%", 
+  fig.width = 6, 
+  fig.asp = 0.618,
+  dpi = 300
+  )
+```
+
+In this report we evaluate the relationships between body measurements of penguins.
+The data come from @gorman2014.
+
+[![Penguin bill measurements](https://allisonhorst.github.io/palmerpenguins/reference/figures/culmen_depth.png "Penguin bill measurements"){width="500"}](https://allisonhorst.github.io/palmerpenguins/)
+
+```{r echo = FALSE}
+penguins_nongentoo <- penguins %>%
+  filter(species != "Gentoo")
+
+# number of species
+n_species <- penguins$species %>% 
+  unique() %>% 
+  length()
+
+names_of_species <- penguins %>%
+  pull(species) %>%
+  unique() %>%
+  glue_collapse(sep = ", ", last = ", and ")
+```
+
+The original <!--# hi comment --> dataset has `r nrow(penguins)` observations from `r n_species` species (`r names_of_species`).
+
+$\hat{y} = \beta_0 + \beta_1 x$
+
+Let's read some data in:
+
+```{r read-data}
+fav_food <- read_excel(here::here("data/favourite-food.xlsx"))
+nrow(fav_food)
+```
+
+# Exploratory data analysis
+
+Table \@ref(tab:summary-stats) shows some summary statistics.
+
+```{r summary-stats}
+penguins %>%
+  group_by(species) %>%
+  summarise(
+    mean_bill_length_mm = mean(bill_length_mm, na.rm = TRUE),
+    mean_bill_depth_mm = mean(bill_depth_mm, na.rm = TRUE),
+    mean_flipper_length_mm = mean(flipper_length_mm, na.rm = TRUE),
+    mean_body_mass_g = mean(body_mass_g, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  kable(caption = "Some caption")
+```
+
+Figure \@ref(fig:many-figures) shows some visualisations.
+
+```{r many-figures, fig.cap = "We have lots of figures!", fig.asp = 0.8, out.width = "100%", warning = FALSE}
+p1 <- ggplot(penguins, aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  geom_point()
+
+p2 <- ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, color = species)) +
+  geom_point()
+
+p3 <- ggplot(penguins, aes(x = body_mass_g, fill = species)) +
+  geom_histogram(alpha = 0.5) +
+  guides(fill = FALSE)
+
+(p1 + p2) / p3 +
+  plot_annotation(
+    tag_levels = "A",
+    title = "Some title",
+    subtitle = "Some subtitle",
+    caption = "Hi"
+  ) +
+  plot_layout(guides = "collect") & theme(legend.position = "bottom")
+```
+
+# References
